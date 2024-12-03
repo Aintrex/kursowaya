@@ -111,114 +111,359 @@ class Calculation
     ////}
     public static void HandleInputData(VBox dynamicContentContainer)
     {
-        // Создаем элементы для ввода исходных данных
-        Label labelgbt = new Label("Введите тип редуктора");
-        Entry entrygbt = new Entry();
-        Label labelZ1 = new Label("Введите число витков червяка:");
+        foreach (var child in dynamicContentContainer.Children)
+        {
+            dynamicContentContainer.Remove(child);
+        }
+        // Создаем начальные элементы для ввода
+        Label labelGbt = new Label("Выберите тип редуктора (общего назначения, специального назначения, не редукторный):");
+        string[] gbtOptions = { "общего назначения", "специального назначения", "не редукторный" };
+        ComboBox comboGbt = new ComboBox(gbtOptions);
+
+        Label labelZ1 = new Label("Введите число витков червяка (1, 2 или 4):");
         Entry fieldZ1 = new Entry();
-        Label labelZ2 = new Label("Введите число зубьев колеса:");
+
+        Label labelQ = new Label("Введите q (8, 9, 10, 12 или 14):");
+        Entry fieldQ = new Entry();
+
+        Label labelZ2 = new Label("Введите число зубьев колеса (28-80):");
         Entry fieldZ2 = new Entry();
+
+        Label labelm = new Label("Введите модуль");
+        Entry fieldm = new Entry();
+
         Button nextStepButton = new Button("Далее");
         Label resultLabel = new Label();
 
-        // Добавляем элементы в контейнер
-        dynamicContentContainer.PackStart(labelgbt, false, false, 5);
-        dynamicContentContainer.PackStart(entrygbt, false, false, 5);
+        // Добавляем начальные элементы в контейнер
+        dynamicContentContainer.PackStart(labelGbt, false, false, 5);
+        dynamicContentContainer.PackStart(comboGbt, false, false, 5);
         dynamicContentContainer.PackStart(labelZ1, false, false, 5);
         dynamicContentContainer.PackStart(fieldZ1, false, false, 5);
+        dynamicContentContainer.PackStart(labelQ, false, false, 5);
+        dynamicContentContainer.PackStart(fieldQ, false, false, 5);
+        dynamicContentContainer.PackStart(labelZ2, false, false, 5);
+        dynamicContentContainer.PackStart(fieldZ2, false, false, 5);
+        dynamicContentContainer.PackStart(labelm, false, false, 5);
+        dynamicContentContainer.PackStart(fieldm, false, false, 5);
         dynamicContentContainer.PackStart(nextStepButton, false, false, 5);
         dynamicContentContainer.PackStart(resultLabel, false, false, 5);
-
+       
+        string gbt = comboGbt.ToString(); // Получаем текст активного элемента
+        int z1=0;
+        int z2=0;
+        int q=0;
+        double m=0;
+        string material;
+        double strength=0;
+        string tableName = "";
+        dynamicContentContainer.ShowAll();
         nextStepButton.Clicked += (s, e) =>
         {
-            if (double.TryParse(fieldZ1.Text, out double z1))
+
+            int activeIndex = comboGbt.Active; // Получаем индекс выбранного элемента
+            string gbt = (activeIndex >= 0) ? gbtOptions[activeIndex] : null;
+            if (string.IsNullOrEmpty(gbt))
             {
-                double.TryParse(fieldZ2.Text, out double z2);
-                double u = z2 / z1;
-                string gbtcheck =
-                // Проверка в таблице 1
-                string type_тр = null;
-                bool found = false;
+                resultLabel.Text = "Ошибка: выберите тип редуктора.";
+                return;
+            }
 
-                // Загрузка данных из таблицы 1
-                DataTable table1 = LoadTable("Бронза латунь больше 350");
-                foreach (DataRow row in table1.Rows)
-                {
-                    if (double.TryParse(row["Число зубьев"].ToString(), out double tableZ1) && tableZ1 == z1)
-                    {
-                        type_тр = row["Тип троса"].ToString();
-                        Console.WriteLine(type_тр, z1);
-                        found = true;
-                        break;
-                    }
-                }
+            if (!int.TryParse(fieldZ1.Text, out z1) || (z1 != 1 && z1 != 2 && z1 != 4))
+            {
+                resultLabel.Text = "Ошибка: введите корректное значение числа витков (1, 2 или 4).";
+                return;
+            }
 
-                if (!found)
+            if (!int.TryParse(fieldQ.Text, out q) || (q != 8 && q != 9 && q != 10 && q != 12 && q != 14))
+            {
+                resultLabel.Text = "Ошибка: введите корректное значение q (10, 12 или 14).";
+                return;
+            }
+
+            if (!int.TryParse(fieldZ2.Text, out z2) || z2 < 28 || z2 > 80)
+            {
+                resultLabel.Text = "Ошибка: введите число зубьев колеса в диапазоне от 28 до 80.";
+                return;
+            }
+            if (!double.TryParse(fieldm.Text, out m))
+            {
+                resultLabel.Text = "Ошибка: введите корректное число m";
+                return;
+            }
+            // Проверка по таблице "Допускаемые сочетания"
+            DataTable allowableTable = LoadTable("Допускаемые сочетания");
+            bool isValidCombination = allowableTable.Rows.Cast<DataRow>().Any(row =>
+                double.Parse(row["m"].ToString()) == m &&
+                int.Parse(row["q"].ToString()) == q &&
+                int.Parse(row["z1"].ToString()) == z1);
+
+            if (!isValidCombination)
+            {
+                resultLabel.Text = "Ошибка: сочетание m, q и z1 не соответствует допустимым значениям.";
+                return;
+            }
+            dynamicContentContainer.ShowAll();
+       
+            // Очистка предыдущих элементов
+            foreach (var child in dynamicContentContainer.Children)
+            {
+                dynamicContentContainer.Remove(child);
+            }
+
+            // Добавление новых элементов для проверки материала и предела прочности
+            Label labelMaterial = new Label("Выберите материал колеса (бронза, латунь, чугун):");
+            string[] matopt = { "бронза", "латунь", "чугун" };
+            ComboBox comboMaterial = new ComboBox(matopt );
+
+            Label labelStrength = new Label("Введите предел прочности материала:");
+            Entry fieldStrength = new Entry();
+
+            Button checkMaterialButton = new Button("Далее");
+
+            dynamicContentContainer.PackStart(labelMaterial, false, false, 5);
+            dynamicContentContainer.PackStart(comboMaterial, false, false, 5);
+            dynamicContentContainer.PackStart(labelStrength, false, false, 5);
+            dynamicContentContainer.PackStart(fieldStrength, false, false, 5);
+            dynamicContentContainer.PackStart(checkMaterialButton, false, false, 5);
+            dynamicContentContainer.PackStart(resultLabel, false, false, 5);
+            material = comboMaterial.ToString();
+            dynamicContentContainer.ShowAll();
+            checkMaterialButton.Clicked += (sender, args) =>
+            {
+                int activeIndex = comboMaterial.Active; // Получаем индекс выбранного элемента
+                string material = (activeIndex >= 0) ? matopt[activeIndex] : null;
+                if (string.IsNullOrEmpty(material))
                 {
-                    resultLabel.Text = "Число зубьев не найдено в таблице 1.";
+                    resultLabel.Text = "Ошибка: выберите материал.";
                     return;
                 }
 
-                // Проверка в таблице 2 для диапазона n1From и n1To
-                found = false;
-                double n1From = 0, n1To = 0;
-
-                DataTable table2 = LoadTable("Бронза менльше 300");
-                foreach (DataRow row in table2.Rows)
+                if (!double.TryParse(fieldStrength.Text, out strength) || strength <= 0)
                 {
-                    if (double.TryParse(row["Число зубьев"].ToString(), out double tableZ1) &&
-                        tableZ1 == z1 &&
-                        type_тр == row["Тип троса"].ToString())
-                    {
-                        n1From = double.Parse(row["Частота от"].ToString());
-                        n1To = double.Parse(row["Частота до"].ToString());
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    resultLabel.Text = "Диапазон частоты вращения не найден в таблице 2.";
+                    resultLabel.Text = "Ошибка: введите корректный предел прочности.";
                     return;
                 }
 
-                // Удаление старых элементов
+                if (material == "бронза" || material == "латунь")
+                {
+                    if ((material == "латунь" && strength < 350))
+                    {
+                        resultLabel.Text = "Ошибка: предел прочности не соответствует выбранному материалу.";
+                        return;
+                    }
+                    if (material=="бронза" && (strength >= 300 && strength <= 350))
+                    {
+                        resultLabel.Text = "Ошибка: предел прочности не соответствует выбранному материалу.";
+                        return;
+                    }
+                }
+
+                // Следующие шаги после успешной проверки
+                resultLabel.Text = "Материал и предел прочности успешно проверены.";
+                // Добавить дальнейшую логику
+           
+                if (material == "чугун")
+                    tableName = "Чугун";
+                else if ((material == "бронза" || material == "латунь") && (strength > 350))
+                    tableName = "Бронза латунь больше 350";
+                else if ((material == "бронза") && strength < 300)
+                    tableName = "Бронза менльше 300";
+
+                // Очистка предыдущих элементов
                 RemoveOldElements(dynamicContentContainer);
-
-                // Добавление панели для ввода n_1
-                Label labelN1Input = new Label($"Введите частоту вращения n_1 (от {n1From} до {n1To}):");
-                Entry fieldN1Input = new Entry { PlaceholderText = $"Введите n_1 от {n1From} до {n1To}" };
-                Button calculateButton = new Button("Рассчитать");
-
-                dynamicContentContainer.PackStart(labelN1Input, false, false, 5);
-                dynamicContentContainer.PackStart(fieldN1Input, false, false, 5);
-                dynamicContentContainer.PackStart(calculateButton, false, false, 5);
-
-                calculateButton.Clicked += (sender, args) =>
+                string casting = "";
+                double speed;
+                string[] matcheropt= {"0" };
+                string[] castopt = { "0" };
+                string[] speedopt = { "0" };
+                double hardness = 0;
+                string sspeed = "";
+                string matcher = "";
+                if (tableName=="Чугун")
                 {
-                    if (double.TryParse(fieldN1Input.Text, out double n1) && n1 >= n1From && n1 <= n1To)
+                    matcheropt = GetAnythingFromTable(tableName, "Материал червяка");
+                    speedopt = GetAnythingFromTable(tableName, "Скорость скольжения");
+                }    
+                else if (tableName=="Бронза латунь больше 350")
+                {
+                    castopt = GetAnythingFromTable(tableName, "Способ отливки");
+                    speedopt = GetAnythingFromTable(tableName, "Скорость скольжения");
+                }
+                else
+                {
+                    castopt = GetAnythingFromTable(tableName, "Способ отливки");
+                }
+                // Добавление элементов для марки материала и способа отливки
+                Label labelMark = new Label("Выберите марку материала:");
+                string[] markopt = GetAnythingFromTable(tableName, "Марка материала");
+                ComboBox comboMark = new ComboBox(markopt);
+                Label labelMatCher = new Label("Введите материал червяка");
+                ComboBox comboMatCher = new ComboBox(matcheropt);
+                Label labelCasting = new Label("Введите способ отливки:");
+                
+                ComboBox comboCasting = new ComboBox(castopt);
+                Label labelHardness = new Label("Введите твердость червяка:");
+                Entry fieldHardness = new Entry();
+                Label labelSpeed = new Label("Введите скорость скольжения");
+                ComboBox comboSpeed = new ComboBox(speedopt);
+                
+
+                dynamicContentContainer.PackStart(labelMark, false, false, 5);
+                dynamicContentContainer.PackStart(comboMark, false, false, 5);
+                if (material != "чугун")
+                {
+                   
+                    dynamicContentContainer.PackStart(labelCasting, false, false, 5);
+                    dynamicContentContainer.PackStart(comboCasting, false, false, 5);
+                   
+                }
+                if (material != "чугун")
+                {
+                    
+                    dynamicContentContainer.PackStart(labelHardness, false, false, 5);
+                    dynamicContentContainer.PackStart(fieldHardness, false, false, 5);
+                   
+                }
+                else {
+                   
+                    dynamicContentContainer.PackStart(labelMatCher, false, false, 5);
+                    dynamicContentContainer.PackStart(comboMatCher, false, false, 5);
+                    
+                }
+                if (tableName == "Чугун" || tableName == "Бронза латунь больше 350")
+                {
+                   
+                    dynamicContentContainer.PackStart(labelSpeed, false, false, 5);
+                    dynamicContentContainer.PackStart(comboSpeed, false, false, 5);
+                   
+                }
+                Button finalizeButton = new Button("Далее");
+
+               
+               
+                dynamicContentContainer.PackStart(finalizeButton, false, false, 5);
+                dynamicContentContainer.PackStart(resultLabel, false, false, 5);
+                string mark = "";
+               
+                dynamicContentContainer.ShowAll();
+                finalizeButton.Clicked += (finalSender, finalArgs) =>
+                {
+                   
+                    int activeIndexmark = comboMark.Active; // Получаем индекс выбранного элемента
+                    mark = (activeIndexmark >= 0) ? markopt[activeIndexmark] : null;
+                   
+                   
+                    if (string.IsNullOrEmpty(mark))
                     {
-                        resultLabel.Text = $"Частота вращения n_1 подтверждена: {n1}";
-                        // Добавить дополнительные расчеты
+                        resultLabel.Text = "Ошибка: выберите марку материала.";
+                        return;
+                    }
+                    if (tableName == "Чугун")
+                    {
+                        int activeIndexmatcher = comboMatCher.Active; // Получаем индекс выбранного элемента
+                        matcher = (activeIndexmatcher >= 0) ? matcheropt[activeIndexmatcher] : null;
+                        if (string.IsNullOrEmpty(matcher))
+                        {
+                            resultLabel.Text = "Ошибка: введите материал червяка";
+                        }
+                        DataTable cherTable = LoadTable(tableName);
+                        bool isMatCherValid = cherTable.Rows.Cast<DataRow>().Any(row =>
+                            row["Марка материала"].ToString()==mark &&
+                            row["Материал червяка"].ToString()==matcher);
+                        if(!isMatCherValid)
+                        {
+                            resultLabel.Text = "Ошибка: материал червяка не соответсвует выбранной марке материала";
+                            return;
+                        }
+                        int activeIndexspd = comboSpeed.Active; // Получаем индекс выбранного элемента
+                        sspeed = (activeIndexspd >= 0) ? speedopt[activeIndexspd] : null;
+                        if (string.IsNullOrEmpty(sspeed))
+                        {
+                            resultLabel.Text = "Ошибка: введите скорость скольжения";
+                        }
+                        speed = double.Parse(sspeed);
+                    }
+                    else if ((tableName == "Бронза латунь больше 350"))
+                    {
+                        int activeIndexcast = comboCasting.Active; // Получаем индекс выбранного элемента
+                        casting = (activeIndexcast >= 0) ? castopt[activeIndexcast] : null;
+                        int activeIndexspd = comboSpeed.Active; // Получаем индекс выбранного элемента
+                        sspeed = (activeIndexspd >= 0) ? speedopt[activeIndexspd] : null;
+                        if (string.IsNullOrEmpty(sspeed))
+                        {
+                            resultLabel.Text = "Ошибка: введите скорость скольжения";
+                        }
+                        
+                        speed = double.Parse(sspeed);
+                        if (string.IsNullOrEmpty(casting))
+                        {
+                            resultLabel.Text = "Ошибка: введите способ отливки.";
+                            return;
+                        }
+                        // Проверка способа отливки в таблице
+                        DataTable materialTable = LoadTable(tableName);
+                        bool isCastingValid = materialTable.Rows.Cast<DataRow>().Any(row =>
+                            row["Марка материала"].ToString() == mark &&
+                            row["Способ отливки"].ToString() == casting);
+
+                        if (!isCastingValid)
+                        {
+                            resultLabel.Text = "Ошибка: способ отливки не соответствует выбранной марке материала.";
+                            return;
+                        }
+                        if (!double.TryParse(fieldHardness.Text, out hardness) || hardness <= 0)
+                        {
+                            resultLabel.Text = "Ошибка: введите корректное значение твердости червяка.";
+                            return;
+                        }
                     }
                     else
                     {
-                        resultLabel.Text = $"Ошибка: введите n_1 в диапазоне от {n1From} до {n1To}.";
+                        int activeIndexcast = comboCasting.Active; // Получаем индекс выбранного элемента
+                        casting = (activeIndexcast >= 0) ? castopt[activeIndexcast] : null;
+                        if (string.IsNullOrEmpty(casting))
+                        {
+                            resultLabel.Text = "Ошибка: введите способ отливки.";
+                            return;
+                        }
+                        // Проверка способа отливки в таблице
+                        DataTable materialTable = LoadTable(tableName);
+                        bool isCastingValid = materialTable.Rows.Cast<DataRow>().Any(row =>
+                            row["Марка материала"].ToString() == mark &&
+                            row["Способ отливки"].ToString() == casting);
+
+                        if (!isCastingValid)
+                        {
+                            resultLabel.Text = "Ошибка: способ отливки не соответствует выбранной марке материала.";
+                            return;
+                        }
+                        if (!double.TryParse(fieldHardness.Text, out hardness) || hardness <= 0)
+                        {
+                            resultLabel.Text = "Ошибка: введите корректное значение твердости червяка.";
+                            return;
+                        }
                     }
+                   
+                   
+                   
+
+                 
+
+                    // Все проверки пройдены, продолжаем логику
+                    resultLabel.Text = "Все данные успешно проверены. Переход к следующему шагу.";
+
+                    // Очистка и добавление логики расчета
+                    RemoveOldElements(dynamicContentContainer);
+
+                    // Здесь можно добавить следующую логику расчета, исходя из собранных данных
                 };
+            };
 
-                dynamicContentContainer.ShowAll();
-            }
-            else
-            {
-                resultLabel.Text = "Ошибка: введите корректное значение числа зубьев.";
-            }
         };
-
-        AddFixedPanels(dynamicContentContainer);
         dynamicContentContainer.ShowAll();
     }
+
 
     private static void RemoveOldElements(VBox container)
     {
@@ -249,7 +494,14 @@ class Calculation
         container.PackStart(labeln2, false, false, 5);
         container.PackStart(fieldn2, false, false, 5);
     }
-
+    private static string[] GetAnythingFromTable(string tableName, string rowName)
+    {
+        DataTable table = LoadTable(tableName);
+        return table.AsEnumerable()
+                    .Select(row => row[rowName].ToString())
+                    .Distinct()
+                    .ToArray();
+    }
     //private static DataTable LoadTable(string tableName)
     //{
     //    using (OleDbConnection connection = new OleDbConnection(сonnectionString))

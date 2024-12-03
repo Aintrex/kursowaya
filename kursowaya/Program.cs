@@ -8,8 +8,8 @@ class Program
         Application.Init();
 
         // Главное окно
-        Window mainWin = new Window("JSON Viewer");
-        mainWin.SetDefaultSize(800, 600);
+        Window mainWin = new Window("Proektirovochniy raschet");
+        mainWin.SetDefaultSize(1080, 720);
         mainWin.DeleteEvent += delegate { Application.Quit(); };
 
         // Основной контейнер
@@ -49,7 +49,7 @@ class Program
         //// Обработчик кнопки "Ввести данные и провести расчет"
         inputDataButton.Clicked += (sender, e) =>
         {
-            dynamicContentContainer.Children.ToList().ForEach(child => dynamicContentContainer.Remove(child));
+           // dynamicContentContainer.Children.ToList().ForEach(child => dynamicContentContainer.Remove(child));
             Calculation.HandleInputData(dynamicContentContainer);
         };
 
