@@ -38,11 +38,13 @@ class Program
             {
                 dynamicContentContainer.Children.ToList().ForEach(child => dynamicContentContainer.Remove(child));
                 showTablesButton.Label = "Показать все таблицы";
+                inputDataButton.Label = "Ввести данные и провести расчет";
             }
             else
             {
                 // Отображение таблиц
                 Calculation.HandleShowTables(dynamicContentContainer, showTablesButton, mainWin);
+                inputDataButton.Label = "Ввести данные и провести расчет";
             }
         };
 
@@ -51,6 +53,7 @@ class Program
         {
            // dynamicContentContainer.Children.ToList().ForEach(child => dynamicContentContainer.Remove(child));
             Calculation.HandleInputData(dynamicContentContainer);
+            inputDataButton.Label = "Ввести данные заново";
         };
 
         // Добавление содержимого в главное окно

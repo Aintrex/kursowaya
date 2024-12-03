@@ -2,6 +2,7 @@ using Gtk;
 using System;
 using System.Data.OleDb;
 using System.Data;
+using System.Net.Cache;
 
 class Calculation
 {
@@ -273,7 +274,7 @@ class Calculation
                 // Очистка предыдущих элементов
                 RemoveOldElements(dynamicContentContainer);
                 string casting = "";
-                double speed;
+                double speed=0;
                 string[] matcheropt= {"0" };
                 string[] castopt = { "0" };
                 string[] speedopt = { "0" };
@@ -455,7 +456,152 @@ class Calculation
 
                     // Очистка и добавление логики расчета
                     RemoveOldElements(dynamicContentContainer);
+                    foreach (var child in dynamicContentContainer.Children)
+                    {
+                        dynamicContentContainer.Remove(child);
+                    }
+                   
+                    double bshp = 0;
+                    if (tableName == "Бронза менльше 300")
+                    {
 
+
+                        bool hrc = false;
+                        if (hardness >= 45)
+                            hrc = true;
+                        else
+                            hrc = false;
+                        DataTable materialTable1 = LoadTable(tableName);
+                        var validRow = materialTable1.Rows.Cast<DataRow>().FirstOrDefault(row =>
+                             row["Марка материала"].ToString() == mark &&
+                             row["Способ отливки"].ToString() == casting &&
+                             bool.TryParse(row["HRC>=45"].ToString(), out bool hrcValue) && hrcValue == hrc);
+
+                        if (validRow != null)
+                        {
+                            // Получаем значение BHP и присваиваем переменной
+                            if (double.TryParse(validRow["BHP"].ToString(), out bshp))
+                            {
+                                resultLabel.Text = $"Все данные успешно проверены. Найдено значение BHP: {bshp}.";
+                            }
+                            else
+                            {
+                                resultLabel.Text = "Ошибка: значение BHP в таблице некорректно.";
+                            }
+                        }
+                        else
+                        {
+                            resultLabel.Text = "Ошибка: не найдена строка, соответствующая заданным критериям.";
+                        }
+                    }
+                    else if (tableName =="Бронза латунь больше 350")
+                    {
+                        bool hrc = false;
+                        if (hardness >= 45)
+                            hrc = true;
+                        else
+                            hrc = false;
+                        DataTable bronz = LoadTable(tableName);
+                        var validRow = bronz.Rows.Cast<DataRow>().FirstOrDefault(row =>
+                             row["Марка материала"].ToString() == mark &&
+                             row["Способ отливки"].ToString() == casting &&
+                             double.TryParse(row["Скрость скольжения"].ToString(), out double velocity) && velocity== speed &&
+                             bool.TryParse(row["HRC>=45"].ToString(), out bool hrcValue) && hrcValue == hrc);
+
+                        if (validRow != null)
+                        {
+                            // Получаем значение BHP и присваиваем переменной
+                            if (double.TryParse(validRow["BHP"].ToString(), out bshp))
+                            {
+                                resultLabel.Text = $"Все данные успешно проверены. Найдено значение BHP: {bshp}.";
+                            }
+                            else
+                            {
+                                resultLabel.Text = "Ошибка: значение BHP в таблице некорректно.";
+                            }
+                        }
+                        else
+                        {
+                            resultLabel.Text = "Ошибка: не найдена строка, соответствующая заданным критериям.";
+                        }
+                    }
+                    else
+                    {
+                        DataTable chugun= LoadTable(tableName);
+                        var validRow = chugun.Rows.Cast<DataRow>().FirstOrDefault(row =>
+                            row["Марка материала"].ToString() == mark &&
+                            row["Материал червяка"].ToString() == matcher &&
+                            double.TryParse(row["Скорость скольжения"].ToString(), out double velocity) && velocity==speed);
+                        if (validRow != null)
+                        {
+                            if (double.TryParse(validRow["BHP"].ToString(), out bshp))
+                            {
+                                resultLabel.Text = $"Все данные успешно проверены. Найдено значение BHP: {bshp}.";
+                            }
+                            else
+                            {
+                                resultLabel.Text = "Ошибка: значение BHP в таблице некорректно.";
+                            }
+                        }
+                        else
+                        {
+                            resultLabel.Text = "Ошибка: не найдена строка, соответствующая заданным критериям.";
+                        }
+                    }
+                    double NH0 = Math.Pow(10, 7);
+                    double n1 = 0;
+                    switch (z1)
+                    {
+                        case 1:
+                            n1 = 60;
+                            break;
+                        case 2:
+                            n1 = 30;
+                            break;
+                        case 4:
+                            n1 = 15;
+                            break;
+                    }
+                    double n2 = 30;
+                    double N1 = 0.15;
+                    double NHE = 60 * 2 * n2;
+                    double KHL = 0;
+                    if (tableName == "Бронза менльше 300")
+                        KHL = Math.Pow((bshp / NHE), 1 / 8);
+                    else
+                        KHL = 1;
+                    double Bhp = bshp * KHL;
+                    double T = 9.55*Math.Pow(10,3)*N1*(0.75/n2);
+                    double a = (z2 + q) * Math.Pow((3.4*Math.Pow(10,7)*T/(Math.Pow((Bhp*z2),2)*q)),1/3);
+                    double x = (a / m) - 0.5 * (q+z2);
+                    Label dannie = new Label();
+                    switch (tableName)
+                    {
+                        case "Чугун":
+                            dannie.Text = $"Введенные данные:\nТип редуктора gbt: {gbt}\nЧисло витков червяка z1: {z1}\n" +
+                               $"Число зубьев колеса z2: {z2}\nЗначение q: {q}\nМодуль m: {m}мм\n" +
+                               $"Материал колеса matrl: {material}\nПредел прочности: strength {strength}\nМарка материала mark: {mark}\nСкорость скольжения v: {speed}m/s" +
+                               $"\nЧастота вращения вала червяка, n1: {n1}min^-1\n Частота вращения колеса n2: {n2}min^-1\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}mm\nx: {x}";
+                            break;
+                        case "Бронза менльше 300":
+                            dannie.Text= $"Введенные данные:\nТип редуктора: {gbt}\nЧисло витков червяка: {z1}\n" +
+                               $"Число зубьев колеса: {z2}\nЗначение q: {q}\nМодуль: {m}мм\n" +
+                               $"Материал колеса: {material}\nПредел прочности: {strength}\nМарка материала: {mark}\nСпособ отливки: {casting}\nHRC: {hardness}\nСкорость скольжения v: {speed}m/s" +
+                               $"\nЧастота вращения вала червяка, n1: {n1}min^-1\n Частота вращения колеса n2: {n2}min^-1\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}mm\nx: {x}";
+                            break;
+                        case "Бронза латунь больше 350":
+                            dannie.Text = $"Введенные данные:\nТип редуктора: {gbt}\nЧисло витков червяка: {z1}\n" +
+                               $"Число зубьев колеса: {z2}\nЗначение q: {q}\nМодуль: {m}мм\n" +
+                               $"Материал колеса: {material}\nПредел прочности: {strength}\nМарка материала: {mark}\nСпособ отливки: {casting}\nHRC: {hardness}" +
+                               $"\nЧастота вращения вала червяка, n1: {n1}min^-1\n Частота вращения колеса n2: {n2}min^-1\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}mm\nx: {x}";
+                            break;
+                    }
+                    //Label dannie = new Label($"Введенные данные:\nТип редуктора: {gbt}\nЧисло витков червяка: {z1}\n" +
+                    //           $"Число зубьев колеса: {z2}\nЗначение q: {q}\nМодуль: {m}мм\n" +
+                    //           $"Материал колеса: {material}\nПредел прочности: {strength}\nМарка материала: {mark}\nСпособ отливки: {casting}\nHRC: {hardness}" +
+                    //           $"\nЧастота вращения вала червяка, n1: {n1}\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}\nx: {x}");
+                    dynamicContentContainer.PackStart(dannie, false, false, 5);
+                    dynamicContentContainer.ShowAll();
                     // Здесь можно добавить следующую логику расчета, исходя из собранных данных
                 };
             };
