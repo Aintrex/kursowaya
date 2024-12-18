@@ -2,13 +2,13 @@ using Gtk;
 using System;
 using System.Data.OleDb;
 using System.Data;
-using System.Net.Cache;
 
 class Calculation
 {
-    private static readonly string connectionString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=\"C:\\Users\\Acer\\Pictures\\kursach\\kursach.accdb\";";
+    private static readonly string connectionString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=kursowaya.accdb;";
     public static void HandleShowTables(VBox dynamicContentContainer, Button showTablesButton, Window mainWin)
     {
+        // Очищаем контейнер от предыдущих элементов
         foreach (var child in dynamicContentContainer.Children)
         {
             dynamicContentContainer.Remove(child);
@@ -16,14 +16,36 @@ class Calculation
 
         if (showTablesButton.Label == "Показать все таблицы")
         {
-            // Отображение таблицы "Бронза латунь больше 350"
-            DisplayTable(dynamicContentContainer, "Бронза латунь больше 350", "Таблица 1", new string[] { "Код", "AAA" });
 
-            // Отображение таблицы "Бронза меньше 300"
-            DisplayTable(dynamicContentContainer, "Бронза менльше 300", "Таблица 2 Бронза менльше 300", new string[] { "Код", "Марка материала", "Способ отливки", "Предел прочности растяжения, МПа", "HRC>=45", "BHP" });
+            using (var connection = new OleDbConnection(connectionString))
+            {
+                connection.Open();
 
-            // Отображение таблицы "Чугун"
-            DisplayTable(dynamicContentContainer, "Чугун", "Таблица 3 Чугун", new string[] { "Код", "Марка материала", "Материал червяка", "Предел прочности при изгибе, МПа", "Скорость скольжения", "BHP" });
+                // Получаем список всех таблиц в базе данных
+                DataTable schemaTable = connection.GetSchema("Tables");
+
+                // Проходим по всем таблицам и отображаем их
+                foreach (DataRow row in schemaTable.Rows)
+                {
+                    string tableName = row["TABLE_NAME"].ToString();
+
+                    // Получаем данные для каждой таблицы
+                    // В данном примере предполагается, что название таблицы не начинается с "System"
+                    if (!tableName.StartsWith("MSys"))
+                    {
+                        // Получаем структуру таблицы (например, имена столбцов)
+                        DataTable tableStructure = connection.GetSchema("Columns", new string[] { null, null, tableName, null });
+
+                        // Получаем список столбцов
+                        var columnNames = tableStructure.Rows.Cast<DataRow>()
+                                                            .Select(r => r["COLUMN_NAME"].ToString())
+                                                            .ToArray();
+
+                        // Отображаем таблицу
+                        DisplayTable(dynamicContentContainer, tableName, tableName, columnNames);
+                    }
+                }
+            }
 
             showTablesButton.Label = "Назад";
         }
@@ -34,6 +56,7 @@ class Calculation
 
         dynamicContentContainer.ShowAll();
     }
+
 
     private static void DisplayTable(VBox container, string tableName, string tableTitle, string[] columnHeaders)
     {
@@ -101,15 +124,6 @@ class Calculation
         }
     }
 
-    ////private static Type[] GetColumnTypes(int columnCount)
-    ////{
-    ////    Type[] columnTypes = new Type[columnCount];
-    ////    for (int i = 0; i < columnCount; i++)
-    ////    {
-    ////        columnTypes[i] = typeof(string);
-    ////    }
-    ////    return columnTypes;
-    ////}
     public static void HandleInputData(VBox dynamicContentContainer)
     {
         foreach (var child in dynamicContentContainer.Children)
@@ -120,18 +134,23 @@ class Calculation
         Label labelGbt = new Label("Выберите тип редуктора (общего назначения, специального назначения, не редукторный):");
         string[] gbtOptions = { "общего назначения", "специального назначения", "не редукторный" };
         ComboBox comboGbt = new ComboBox(gbtOptions);
-
-        Label labelZ1 = new Label("Введите число витков червяка (1, 2 или 4):");
-        Entry fieldZ1 = new Entry();
+        Label labelm = new Label("Введите модуль");
+        Entry fieldm = new Entry();
+        Label labelZ2 = new Label("Введите число зубьев колеса (28-80):");
+        Entry fieldZ2 = new Entry();
 
         Label labelQ = new Label("Введите q (8, 9, 10, 12 или 14):");
         Entry fieldQ = new Entry();
 
-        Label labelZ2 = new Label("Введите число зубьев колеса (28-80):");
-        Entry fieldZ2 = new Entry();
+        Label labelZ1 = new Label("Введите число витков червяка (1, 2 или 4):");
+        Entry fieldZ1 = new Entry();
 
-        Label labelm = new Label("Введите модуль");
-        Entry fieldm = new Entry();
+        Label labelkpd = new Label("Введите кпд:");
+        Entry fieldkpd = new Entry();
+
+       
+
+        
 
         Button nextStepButton = new Button("Далее");
         Label resultLabel = new Label();
@@ -139,14 +158,16 @@ class Calculation
         // Добавляем начальные элементы в контейнер
         dynamicContentContainer.PackStart(labelGbt, false, false, 5);
         dynamicContentContainer.PackStart(comboGbt, false, false, 5);
-        dynamicContentContainer.PackStart(labelZ1, false, false, 5);
-        dynamicContentContainer.PackStart(fieldZ1, false, false, 5);
-        dynamicContentContainer.PackStart(labelQ, false, false, 5);
-        dynamicContentContainer.PackStart(fieldQ, false, false, 5);
-        dynamicContentContainer.PackStart(labelZ2, false, false, 5);
-        dynamicContentContainer.PackStart(fieldZ2, false, false, 5);
         dynamicContentContainer.PackStart(labelm, false, false, 5);
         dynamicContentContainer.PackStart(fieldm, false, false, 5);
+        dynamicContentContainer.PackStart(labelQ, false, false, 5);
+        dynamicContentContainer.PackStart(fieldQ, false, false, 5);
+        dynamicContentContainer.PackStart(labelZ1, false, false, 5);
+        dynamicContentContainer.PackStart(fieldZ1, false, false, 5);
+        dynamicContentContainer.PackStart(labelZ2, false, false, 5);
+        dynamicContentContainer.PackStart(fieldZ2, false, false, 5);
+        dynamicContentContainer.PackStart(labelkpd, false, false, 5);
+        dynamicContentContainer.PackStart(fieldkpd, false, false, 5);
         dynamicContentContainer.PackStart(nextStepButton, false, false, 5);
         dynamicContentContainer.PackStart(resultLabel, false, false, 5);
        
@@ -158,6 +179,7 @@ class Calculation
         string material;
         double strength=0;
         string tableName = "";
+        double kpd=0;
         dynamicContentContainer.ShowAll();
         nextStepButton.Clicked += (s, e) =>
         {
@@ -169,10 +191,25 @@ class Calculation
                 resultLabel.Text = "Ошибка: выберите тип редуктора.";
                 return;
             }
-
+            if(!double.TryParse(fieldkpd.Text, out kpd))
+            {
+                resultLabel.Text = "Ошибка: введите корректное значение кпд.";
+                return;
+            }
+            
             if (!int.TryParse(fieldZ1.Text, out z1) || (z1 != 1 && z1 != 2 && z1 != 4))
             {
                 resultLabel.Text = "Ошибка: введите корректное значение числа витков (1, 2 или 4).";
+                return;
+            }
+            DataTable kpdtb = LoadTable("КПД");
+            bool isvalid = kpdtb.Rows.Cast<DataRow>().Any(row =>
+                int.Parse(row["Число витков червяка"].ToString())==z1 &&
+                double.Parse(row["КПД мин"].ToString())<=kpd &&
+                double.Parse(row["КПД макс"].ToString())>=kpd);
+            if (!isvalid)
+            {
+                resultLabel.Text = "Ошибка: значение КПД не входит в диапазон";
                 return;
             }
 
@@ -269,7 +306,7 @@ class Calculation
                 else if ((material == "бронза" || material == "латунь") && (strength > 350))
                     tableName = "Бронза латунь больше 350";
                 else if ((material == "бронза") && strength < 300)
-                    tableName = "Бронза менльше 300";
+                    tableName = "Бронза меньше 300";
 
                 // Очистка предыдущих элементов
                 RemoveOldElements(dynamicContentContainer);
@@ -462,7 +499,7 @@ class Calculation
                     }
                    
                     double bshp = 0;
-                    if (tableName == "Бронза менльше 300")
+                    if (tableName == "Бронза меньше 300")
                     {
 
 
@@ -566,14 +603,86 @@ class Calculation
                     double N1 = 0.15;
                     double NHE = 60 * 2 * n2;
                     double KHL = 0;
-                    if (tableName == "Бронза менльше 300")
+                    if (tableName == "Бронза меньше 300")
+                    {
                         KHL = Math.Pow((bshp / NHE), 1 / 8);
+                        //if (!(0.67<=KHL && KHL>=1.7)) 
+                        //{
+                        //    resultLabel.Text = "Ошибка: KHL должен быть в пределах от 0.67 до 1.7";
+                        //    dynamicContentContainer.ShowAll();
+                        //    return;
+                        //}
+                    }
                     else
                         KHL = 1;
                     double Bhp = bshp * KHL;
-                    double T = 9.55*Math.Pow(10,3)*N1*(0.75/n2);
+                    double T = 9.55*Math.Pow(10,3)*N1*(kpd/n2);
                     double a = (z2 + q) * Math.Pow((3.4*Math.Pow(10,7)*T/(Math.Pow((Bhp*z2),2)*q)),1/3);
-                    double x = (a / m) - 0.5 * (q+z2);
+                    int ao = RoundValue(a, gbt, "Межосевые расстояния");
+                    double q1 = q;
+                    double q2 = 0;
+                    double m1 = FindMAndAdjust(ao, q, z2, "Допускаемые сочетания");
+
+                    double FindMAndAdjust(double a, double initialQ, int initialZ2, string tablenm)
+                    {
+                        DataTable table = LoadTable(tablenm);
+                        double xx = 0;
+                        double mm = 0;
+
+                        // 1. Найти m для x = 0
+                        double calculatedM = a / (0.5 * (initialQ + initialZ2));
+
+                        // Найти ближайшее допустимое значение m из таблицы
+                        var validMValues = table.Rows.Cast<DataRow>()
+                                                     .Select(row => double.Parse(row["m"].ToString()))
+                                                     .OrderBy(value => Math.Abs(value - calculatedM))
+                                                     .ToList();
+                        mm = validMValues.FirstOrDefault();
+
+                        // Вычислить x
+                        xx = (a / mm) - 0.5 * (initialQ + initialZ2);
+                        if (xx >= -1 && xx <= 1)
+                            return mm;
+                        // 2. Проверить x и скорректировать z2
+                        if (xx < -1 || xx > 1)
+                        {
+                            z2 = initialZ2;
+                            z2 += 2;
+                            xx = (a / mm) - 0.5 * (initialQ + z2);
+                            if (xx < -1 || xx > 1)
+                            {
+                                z2 -= 4;
+                                xx = (a / mm) - 0.5 * (initialQ + z2);
+                            }
+                            if (xx >= -1 && xx <= 1)
+                                return mm;
+                        }
+
+                        // 3. Если z2 не помогло, изменить q
+                        var validQValues = table.Rows.Cast<DataRow>()
+                                                     .Where(row => double.Parse(row["m"].ToString()) == mm)
+                                                     .Select(row => double.Parse(row["q"].ToString()))
+                                                     .ToList();
+
+                        double bestQ = initialQ;
+                        double bestX = xx;
+
+                        foreach (var qq in validQValues)
+                        {
+                            double tempX = (a / mm) - 0.5 * (qq + initialZ2);
+                            if (Math.Abs(tempX - 1) < Math.Abs(bestX - 1) || (tempX >= -1 && tempX <= 1 && Math.Abs(tempX - 1) < Math.Abs(bestX)))
+                            {
+                                bestQ = qq;
+                                bestX = tempX;
+                            }
+                        }
+                        q2= bestQ;
+                        // Вернуть скорректированное m
+                        return mm;
+                    }
+                    if (q2 != 0)
+                        q1 = q2;
+                    double x = (a / m1) - 0.5 * (q1+z2);
                     Label dannie = new Label();
                     switch (tableName)
                     {
@@ -581,19 +690,19 @@ class Calculation
                             dannie.Text = $"Введенные данные:\nТип редуктора gbt: {gbt}\nЧисло витков червяка z1: {z1}\n" +
                                $"Число зубьев колеса z2: {z2}\nЗначение q: {q}\nМодуль m: {m}мм\n" +
                                $"Материал колеса matrl: {material}\nПредел прочности: strength {strength}\nМарка материала mark: {mark}\nСкорость скольжения v: {speed}m/s" +
-                               $"\nЧастота вращения вала червяка, n1: {n1}min^-1\n Частота вращения колеса n2: {n2}min^-1\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}mm\nx: {x}";
+                               $"\nЧастота вращения вала червяка, n1: {n1}min^-1\n Частота вращения колеса n2: {n2}min^-1\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}mm\na по табл: {ao}mm\nx: {x}";
                             break;
-                        case "Бронза менльше 300":
+                        case "Бронза меньше 300":
                             dannie.Text= $"Введенные данные:\nТип редуктора: {gbt}\nЧисло витков червяка: {z1}\n" +
                                $"Число зубьев колеса: {z2}\nЗначение q: {q}\nМодуль: {m}мм\n" +
                                $"Материал колеса: {material}\nПредел прочности: {strength}\nМарка материала: {mark}\nСпособ отливки: {casting}\nHRC: {hardness}\nСкорость скольжения v: {speed}m/s" +
-                               $"\nЧастота вращения вала червяка, n1: {n1}min^-1\n Частота вращения колеса n2: {n2}min^-1\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}mm\nx: {x}";
+                               $"\nЧастота вращения вала червяка, n1: {n1}min^-1\n Частота вращения колеса n2: {n2}min^-1\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}mm\na по табл: {ao}mm\nm по табл: {m1}mm\nq по табл: {q2}mm\nx: {x}";
                             break;
                         case "Бронза латунь больше 350":
                             dannie.Text = $"Введенные данные:\nТип редуктора: {gbt}\nЧисло витков червяка: {z1}\n" +
                                $"Число зубьев колеса: {z2}\nЗначение q: {q}\nМодуль: {m}мм\n" +
                                $"Материал колеса: {material}\nПредел прочности: {strength}\nМарка материала: {mark}\nСпособ отливки: {casting}\nHRC: {hardness}" +
-                               $"\nЧастота вращения вала червяка, n1: {n1}min^-1\n Частота вращения колеса n2: {n2}min^-1\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}mm\nx: {x}";
+                               $"\nЧастота вращения вала червяка, n1: {n1}min^-1\n Частота вращения колеса n2: {n2}min^-1\nNHE: {NHE}\nKHL: {KHL}\nbshp: {bshp}\nBhp: {Bhp}\nT2: {T}\na: {a}mm\na по табл: {ao}mm\nx: {x}";
                             break;
                     }
                     //Label dannie = new Label($"Введенные данные:\nТип редуктора: {gbt}\nЧисло витков червяка: {z1}\n" +
@@ -610,7 +719,44 @@ class Calculation
         dynamicContentContainer.ShowAll();
     }
 
+    static int RoundValue(double calculatedValue, string reducerType, string tablen)
+    {
+        DataTable table = new DataTable();
+        table = LoadTable(tablen);
+        if (reducerType == "общего назначения")
+        {
+            if (table == null)
+            {
+                throw new ArgumentNullException(nameof(table), "Таблица не предоставлена для редуктора общего назначения.");
+            }
 
+            // Получаем список допустимых значений из таблицы
+            var validValues = table.Rows.Cast<DataRow>()
+                                        .Select(row => double.Parse(row["1й ряд"].ToString()))
+                                        .OrderBy(value => value)
+                                        .ToList();
+
+            // Находим ближайшее значение из таблицы
+            double nearestValue = validValues.OrderBy(value => Math.Abs(value - calculatedValue)).FirstOrDefault();
+            return (int)Math.Round(nearestValue);
+        }
+        else
+        {
+            // Для других редукторов: округление до ближайшего числа с окончанием на 0 или 5
+            double remainder = calculatedValue % 10;
+
+            if (remainder <= 2 || (remainder > 2 && remainder <= 5))
+            {
+                // Округляем вниз к ближайшему числу с окончанием на 0 или 5
+                return (int)(calculatedValue - remainder + (remainder > 2 && remainder <= 5 ? 5 : 0));
+            }
+            else
+            {
+                // Округляем вверх к ближайшему числу с окончанием на 0
+                return (int)(calculatedValue - remainder + 10);
+            }
+        }
+    }
     private static void RemoveOldElements(VBox container)
     {
         var elementsToRemove = container.Children
@@ -623,23 +769,6 @@ class Calculation
         }
     }
 
-    private static void AddFixedPanels(VBox container)
-    {
-        Label labelN = new Label("Введите мощность, передаваемую ремнем:");
-        Entry fieldN = new Entry();
-        container.PackStart(labelN, false, false, 5);
-        container.PackStart(fieldN, false, false, 5);
-
-        Label labelC1 = new Label("Введите поправку на диаметр шкива:");
-        Entry fieldC1 = new Entry();
-        container.PackStart(labelC1, false, false, 5);
-        container.PackStart(fieldC1, false, false, 5);
-
-        Label labeln2 = new Label("Введите частоту вращения меньшего шкива:");
-        Entry fieldn2 = new Entry();
-        container.PackStart(labeln2, false, false, 5);
-        container.PackStart(fieldn2, false, false, 5);
-    }
     private static string[] GetAnythingFromTable(string tableName, string rowName)
     {
         DataTable table = LoadTable(tableName);
@@ -648,17 +777,278 @@ class Calculation
                     .Distinct()
                     .ToArray();
     }
-    //private static DataTable LoadTable(string tableName)
-    //{
-    //    using (OleDbConnection connection = new OleDbConnection(сonnectionString))
-    //    {
-    //        connection.Open();
-    //        string query = $"SELECT * FROM [{tableName}]";
-    //        OleDbDataAdapter adapter = new OleDbDataAdapter(query, connection);
-    //        DataTable dataTable = new DataTable();
-    //        adapter.Fill(dataTable);
-    //        return dataTable;
-    //    }
-    //}
+    public static void HandleInputData1(VBox dynamicContentContainer)
+    {
+        List<(int id, int a, double x)> results = new List<(int id, int a, double x)>(); // Список для результатов (id детали, значение a)
+        DataTable sostav = LoadTable("Состав СЕ");
+        DataTable detailsTable = LoadTable("Деталь");
+        DataTable SeTable = LoadTable("Сборочная единица");
+        DataTable mqz1 = LoadTable("Допускаемые сочетания");
+        DataTable kpdTable = LoadTable("КПД");
+        var groupSE = sostav.AsEnumerable()
+            .GroupBy(row => row["senom"].ToString())
+            .ToDictionary(
+            g => g.Key,
+            g => g.Select(r => r["detkod"].ToString()).ToList()
+            );
+        foreach (var k in groupSE)
+        {
+            var kodSE = k.Key;
+            int kodSE1 = Convert.ToInt32(kodSE);
+            var detlist = k.Value;
+            if (detlist.Count<2 || detlist.Count>2)
+            {
+                results.Add((kodSE1, 0, -2));
+                continue; 
+            }
+            //Поиск червяка и колеса
+            string kodCh = detlist.FirstOrDefault(code => detailsTable.AsEnumerable().Any(row => row["detkod"].ToString() == code && row["detname"].ToString() == "червяк"));
+            string kodWh = detlist.FirstOrDefault(code => detailsTable.AsEnumerable().Any(row => row["detkod"].ToString() == code && row["detname"].ToString() == "колесо"));
+            if (kodCh == null || kodWh== null)
+            {
+                results.Add((kodSE1, 0, -2));
+                continue;
+            }
+
+
+            //Сбор переменных из таблиц
+            DataRow chrow = detailsTable.AsEnumerable().FirstOrDefault(row => row["detkod"].ToString() == kodCh);
+            //z1,q,matcher,HRC ДЛЯ ЧЕРВЯКА
+            int z1 = int.TryParse(chrow["z1"].ToString(), out int tz1) ? tz1 : 0;
+            int q = int.TryParse(chrow["q"].ToString(), out int tq) ? tq : 0;
+            string matcher = chrow["matcher"].ToString();
+            double HRC = double.TryParse(chrow["HRC"].ToString(), out double HRC2) ? HRC2 : 0;
+            double N1 = double.TryParse(chrow["N"].ToString(), out double tn1) ? tn1 : 0;
+            DataRow whrow = detailsTable.AsEnumerable().FirstOrDefault(row => row["detkod"].ToString() == kodWh);
+            double n1 = double.TryParse(chrow["n1"].ToString(), out double tn11) ? tn11 : 0;
+            //casting, mark, mw,vs ДЛЯ КОЛЕСА
+            string casting = whrow["casting"].ToString();
+            string mark = whrow["mark"].ToString();
+            string mw = whrow["mw"].ToString();
+            double vs = double.TryParse(whrow["vs"].ToString(), out double tvs)? tvs : 0;
+            int bv = int.TryParse(whrow["bv"].ToString(), out int tbv) ? tbv : 0;
+            int z2 = int.TryParse(whrow["z2"].ToString(), out int tz2) ? tz2 : 0;
+            double n2 = double.TryParse(chrow["n2"].ToString(), out double tn2) ? tn2 : 0;
+            int t = int.TryParse(whrow["t"].ToString(), out int tt) ? tt : 0;
+            //gbt, n, m ДЛЯ СЕ
+            DataRow serow = SeTable.AsEnumerable().FirstOrDefault(row => row["senom"].ToString()==kodSE);
+            string gbt = serow["gbt"].ToString();
+            double n = double.TryParse(serow["n"].ToString(), out double tn) ? tn : 0;
+            double m = double.TryParse(serow["m"].ToString(), out double tm) ? tm : 0;
+
+
+            //Проверка m q z1
+            bool isValidCombination = mqz1.Rows.Cast<DataRow>().Any(row =>
+                double.Parse(row["m"].ToString()) == m &&
+                int.Parse(row["q"].ToString()) == q &&
+                int.Parse(row["z1"].ToString()) == z1);
+            if (!isValidCombination)
+            {
+                results.Add((kodSE1, 0, -2));
+                continue;
+            }
+
+
+            //Проверка кпд
+            bool isValidKPD = kpdTable.Rows.Cast<DataRow>().Any(row =>
+            double.Parse(row["КПД мин"].ToString()) <= n && double.Parse(row["КПД макс"].ToString()) >= n);
+            DataRow rowmat=null;
+            bool rowcheck = true;
+            DataTable materialTable;
+            //bshp по таблицам
+            int bshp = 0;
+            if (mw=="Чугун")
+            {
+                materialTable = LoadTable("Чугун");
+                rowmat = materialTable.Rows.Cast<DataRow>().FirstOrDefault(row =>
+                row["Марка материала"].ToString() == mark &&
+                row["Материал червяка"].ToString() == matcher &&
+                double.TryParse(row["Скорость скольжения"].ToString(), out double velocity) && velocity == vs);
+
+                if (rowmat != null)
+                {
+                    bshp = int.TryParse(rowmat["BHP"].ToString(), out int tbshp) ? tbshp : 0;
+                }
+                else rowcheck = false;
+            }
+            else if (mw =="Бронза" && bv<300)
+            {
+                materialTable = LoadTable("Бронза меньше 300");
+               rowmat = materialTable.Rows.Cast<DataRow>().FirstOrDefault(row =>
+               row["Марка материала"].ToString() == mark &&
+               row["Способ отливки"].ToString() == casting &&
+               bool.TryParse(row["HRC>=45"].ToString(), out bool thrc) && thrc == HRC>=45);
+
+                if (rowmat !=null)
+                {
+                    bshp=int.TryParse(rowmat["BHP"].ToString(), out int tbshp) ? tbshp : 0;
+                }
+                else rowcheck = false;
+            }
+            else if ((mw == "Бронза" || mw=="Латунь")  &&  bv>350)
+            {
+                materialTable = LoadTable("Бронза меньше 300");
+                rowmat = materialTable.Rows.Cast<DataRow>().FirstOrDefault(row =>
+                row["Марка материала"].ToString() == mark &&
+                row["Способ отливки"].ToString() == casting &&
+                bool.TryParse(row["HRC>=45"].ToString(), out bool thrc) && (thrc == (HRC >= 45)) &&
+                double.TryParse(row["Скорость скольжения"].ToString(), out double velocity) && velocity == vs);
+
+                if (rowmat != null)
+                {
+                    bshp = int.TryParse(rowmat["BHP"].ToString(), out int tbshp) ? tbshp : 0;
+                }
+                else rowcheck = false;
+            }    
+            if (!rowcheck)
+            {
+                results.Add((kodSE1, 0, -2));
+                continue;
+            }
+            if (bshp==0)
+            {
+                results.Add((kodSE1, 0, -2));
+                continue;
+            }
+            double NH0 = Math.Pow(10, 7);
+            //double n1 = 0;
+            //switch (z1)
+            //{
+            //    case 1:
+            //        n1 = 60;
+            //        break;
+            //    case 2:
+            //        n1 = 30;
+            //        break;
+            //    case 4:
+            //        n1 = 15;
+            //        break;
+            //}
+            //double n2 = 30;
+            double NHE = 60 * t * n2;
+            double KHL = 0;
+                KHL = Math.Pow((bshp / NHE), 1 / 8);
+            double Bhp = bshp * KHL;
+            double T = 9.55 * Math.Pow(10, 3) * N1 * (n / n2);
+            double a = (z2 + q) * Math.Pow((3.4 * Math.Pow(10, 7) * T / (Math.Pow((Bhp * z2), 2) * q)), 1 / 3);
+            int ao = RoundValue(a, gbt, "Межосевые расстояния");
+            double q1 = q;
+            double q2 = 0;
+            double m1 = FindMAndAdjust(ao, q, z2, "Допускаемые сочетания");
+
+            double FindMAndAdjust(double a, double initialQ, int initialZ2, string tablenm)
+            {
+                DataTable table = LoadTable(tablenm);
+                double xx = 0;
+                double mm = 0;
+
+                // 1. Найти m для x = 0
+                double calculatedM = a / (0.5 * (initialQ + initialZ2));
+
+                // Найти ближайшее допустимое значение m из таблицы
+                var validMValues = table.Rows.Cast<DataRow>()
+                                             .Select(row => double.Parse(row["m"].ToString()))
+                                             .OrderBy(value => Math.Abs(value - calculatedM))
+                                             .ToList();
+                mm = validMValues.FirstOrDefault();
+
+                // Вычислить x
+                xx = (a / mm) - 0.5 * (initialQ + initialZ2);
+                if (xx >= -1 && xx <= 1)
+                    return mm;
+                // 2. Проверить x и скорректировать z2
+                if (xx < -1 || xx > 1)
+                {
+                    z2 = initialZ2;
+                    z2 += 2;
+                    xx = (a / mm) - 0.5 * (initialQ + z2);
+                    if (xx < -1 || xx > 1)
+                    {
+                        z2 -= 4;
+                        xx = (a / mm) - 0.5 * (initialQ + z2);
+                    }
+                    if (xx >= -1 && xx <= 1)
+                        return mm;
+                }
+
+                // 3. Если z2 не помогло, изменить q
+                var validQValues = table.Rows.Cast<DataRow>()
+                                             .Where(row => double.Parse(row["m"].ToString()) == mm)
+                                             .Select(row => double.Parse(row["q"].ToString()))
+                                             .ToList();
+
+                double bestQ = initialQ;
+                double bestX = xx;
+
+                foreach (var qq in validQValues)
+                {
+                    double tempX = (a / mm) - 0.5 * (qq + initialZ2);
+                    if (Math.Abs(tempX - 1) < Math.Abs(bestX - 1) || (tempX >= -1 && tempX <= 1 && Math.Abs(tempX - 1) < Math.Abs(bestX)))
+                    {
+                        bestQ = qq;
+                        bestX = tempX;
+                    }
+                }
+                q2 = bestQ;
+                // Вернуть скорректированное m
+                return mm;
+            }
+            if (q2 != 0)
+                q1 = q2;
+            double x = (a / m1) - 0.5 * (q1 + z2);
+            results.Add((kodSE1, ao, x));
+        }
+
+        
+
+    
+
+        // Запись результатов в таблицу "Результаты"
+        SaveResultsToDatabase(results);
+        
+    }
+
+
+    private static void SaveResultsToDatabase(List<(int id, int a, double x)> results)
+    {
+        using (var connection = new OleDbConnection(connectionString)) // Укажите строку подключения
+        {
+            connection.Open();
+
+            foreach (var (id, a, x) in results)
+            {
+                // Проверяем, существует ли запись с таким id
+                using (var checkCommand = new OleDbCommand("SELECT COUNT(*) FROM [Результат] WHERE senom = ?", connection))
+                {
+                    checkCommand.Parameters.AddWithValue("?", id);
+                    int count = (int)checkCommand.ExecuteScalar();
+
+                    if (count > 0)
+                    {
+                        // Если запись существует, обновляем значение a
+                        using (var updateCommand = new OleDbCommand("UPDATE [Результат] SET a = ?, x=? WHERE senom = ?", connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("?", a);
+                            updateCommand.Parameters.AddWithValue("?", x);
+                            updateCommand.Parameters.AddWithValue("?", id);
+                            updateCommand.ExecuteNonQuery();
+                        }
+                    }
+                    else
+                    {
+                        // Если записи нет, добавляем новую
+                        using (var insertCommand = new OleDbCommand("INSERT INTO [Результат] (senom, a, x) VALUES (?, ?, ?)", connection))
+                        {
+                            insertCommand.Parameters.AddWithValue("?", id);
+                            insertCommand.Parameters.AddWithValue("?", a);
+                            insertCommand.Parameters.AddWithValue("?", x);
+                            insertCommand.ExecuteNonQuery();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
 }

@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "dgSpecHash": "jInPC2E3j34=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Acer\\Desktop\\kursachbd\\kursowaya\\kursowaya.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Acer\\.nuget\\packages\\atksharp\\3.24.24.95\\atksharp.3.24.24.95.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\cairosharp\\3.24.24.95\\cairosharp.3.24.24.95.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\closedxml\\0.104.1\\closedxml.0.104.1.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\closedxml.parser\\1.2.0\\closedxml.parser.1.2.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\documentformat.openxml\\3.0.1\\documentformat.openxml.3.0.1.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\documentformat.openxml.framework\\3.0.1\\documentformat.openxml.framework.3.0.1.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\excelnumberformat\\1.1.0\\excelnumberformat.1.1.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\gdksharp\\3.24.24.95\\gdksharp.3.24.24.95.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\giosharp\\3.24.24.95\\giosharp.3.24.24.95.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\glibsharp\\3.24.24.95\\glibsharp.3.24.24.95.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\gtksharp\\3.24.24.95\\gtksharp.3.24.24.95.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\gtksharp.dependencies\\1.1.0\\gtksharp.dependencies.1.1.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\pangosharp\\3.24.24.95\\pangosharp.3.24.24.95.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\rbush\\3.2.0\\rbush.3.2.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\sixlabors.fonts\\1.0.0\\sixlabors.fonts.1.0.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\system.configuration.configurationmanager\\9.0.0\\system.configuration.configurationmanager.9.0.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\system.data.oledb\\9.0.0\\system.data.oledb.9.0.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\system.diagnostics.eventlog\\9.0.0\\system.diagnostics.eventlog.9.0.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\system.diagnostics.performancecounter\\9.0.0\\system.diagnostics.performancecounter.9.0.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\system.io.packaging\\8.0.0\\system.io.packaging.8.0.0.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\system.security.cryptography.protecteddata\\9.0.0\\system.security.cryptography.protecteddata.9.0.0.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "У пакета \"System.IO.Packaging\" 8.0.0 есть известная уязвимость https://github.com/advisories/GHSA-f32c-w444-8ppv (уровень серьезности: высокий)",
+      "libraryId": "System.IO.Packaging",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "У пакета \"System.IO.Packaging\" 8.0.0 есть известная уязвимость https://github.com/advisories/GHSA-qj66-m88j-hmgj (уровень серьезности: высокий)",
+      "libraryId": "System.IO.Packaging",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
+}
